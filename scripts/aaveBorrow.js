@@ -29,6 +29,41 @@ async function main() {
   await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0);
   console.log("Depoisted");
   // ------------------- END OF DEPOIST --------------------
+  let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(
+    lendingPool,
+    deployer
+  );
+  // what is coversion rate on dai
+  const daiPrice = await getDaiPrice();
+  const amountDaiToBorrow =
+    availableBorrowsETH.toString() * 0.95 * (1 / daiPrice.toNumber());
+  console.log(`You can borrow ${amountDaiToBorrow} DAI`);
+  const amountDaiToBorrowWei = ethers.utils.parseEther(
+    amountDaiToBorrow.toString()
+  );
+  // Borrow
+  // how much we have borrowed
+}
+
+async function getDaiPrice() {
+  // dont need signer if just reading and not signing anything to send
+  const daiEthPriceFeed = await ethers.getContractAt(
+    "AggregatorV3Interface",
+    "0x773616E4d11A78F511299002da57A0a94577F1f4"
+  );
+  // returns first index of
+  const price = (await daiEthPriceFeed.latestRoundData())[1];
+  console.log(`The DAI/ETH price is ${price.toString()} tokens`);
+  return price;
+}
+
+async function getBorrowUserData(lendingPool, account) {
+  const { totalCollateralETH, totalDebtETH, availableBorrowsETH } =
+    await lendingPool.getUserAccountData(account);
+  console.log(`You have ${totalCollateralETH} worth of ETH deposited.`);
+  console.log(`You have ${totalDebtETH} worth of ETH borrowed.`);
+  console.log(`You can borrow ${availableBorrowsETH} worth of ETH.`);
+  return { availableBorrowsETH, totalDebtETH };
 }
 
 // spendingaddress - address to approve
